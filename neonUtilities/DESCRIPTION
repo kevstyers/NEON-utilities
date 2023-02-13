@@ -1,5 +1,5 @@
 Package: neonUtilities
-Version: 2.2.1.9000
+Version: 2.2.1.654654891
 Date: 2023-01-17
 Title: Utilities for Working with NEON Data
 Authors@R: c(person("Claire","Lunch",email="clunch@battelleecology.org",role=c("aut","cre","ctb")), person("Christine","Laney",role=c("aut","ctb")), person("Nathan","Mietkiewicz",role=c("aut","ctb")), person("Eric","Sokol",role=c("aut","ctb")), person("Kaelin","Cawley",role=c("aut","ctb")), person("NEON (National Ecological Observatory Network)", role="aut"))

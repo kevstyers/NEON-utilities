@@ -44,7 +44,7 @@
 ##############################################################################################
 
 zipsByProduct <- function(dpID, site="all", startdate=NA, enddate=NA, package="basic",
-                          release="current", timeIndex="all", tabl="all", check.size=TRUE, 
+                          release="current", timeIndex="all", tabl="all", check.size=TRUE,
                           savepath=NA, load=F, token=NA_character_, avg=NA) {
 
   messages <- NA
@@ -63,7 +63,7 @@ zipsByProduct <- function(dpID, site="all", startdate=NA, enddate=NA, package="b
   if(substring(dpID, 5, 5)==3 & dpID!='DP1.30012.001') {
     stop(paste(dpID, "is a remote sensing data product. Use the byFileAOP() or byTileAOP() function.", sep=" "))
   }
-  
+
   # error message if dates aren't formatted correctly
   # separate logic for each, to easily allow only one to be NA
   if(!is.na(startdate)) {
@@ -71,25 +71,25 @@ zipsByProduct <- function(dpID, site="all", startdate=NA, enddate=NA, package="b
       stop("startdate and enddate must be either NA or valid dates in the form YYYY-MM")
     }
   }
-  
+
   if(!is.na(enddate)) {
     if(regexpr("[0-9]{4}-[0-9]{2}", enddate)!=1) {
       stop("startdate and enddate must be either NA or valid dates in the form YYYY-MM")
     }
   }
-  
+
   # warning message if using deprecated avg= instead of timeIndex=
   if(!is.na(avg)) {
     cat('Input parameter avg is deprecated; use timeIndex to download by time interval.\n')
   } else {
     avg <- timeIndex
   }
-  
+
   # error message if using timeIndex & tabl
   if(avg!="all" & tabl!="all") {
     stop("Either timeIndex or tabl can be specified, but not both.")
   }
-  
+
   # check and warning message if using tabl=
   if(tabl!="all") {
     message(paste("Warning: Downloading only table ", tabl, ". Downloading by table is not recommended unless you are already familiar with the data product and its contents.\n", sep=""))
@@ -97,16 +97,16 @@ zipsByProduct <- function(dpID, site="all", startdate=NA, enddate=NA, package="b
       message(paste("Warning: ", tabl, " is not in list of known tables. Download will be attempted, but check name and check neonUtilities for updates.\n", sep=""))
     } else {
       if(!dpID %in% table_types$productID[which(table_types$tableName==tabl)]) {
-        message(paste(tabl, " is a table in ", 
-                   paste(table_types$productID[which(table_types$tableName==tabl)], collapse=" "), 
-                   ", not in ", dpID, 
+        message(paste(tabl, " is a table in ",
+                   paste(table_types$productID[which(table_types$tableName==tabl)], collapse=" "),
+                   ", not in ", dpID,
                    ". Download will be attempted, but check for updates.\n", sep=""))
       }
-      if("lab-current" %in% table_types$tableType[which(table_types$tableName==tabl)] | 
+      if("lab-current" %in% table_types$tableType[which(table_types$tableName==tabl)] |
          "lab-all" %in% table_types$tableType[which(table_types$tableName==tabl)]) {
-        stop(paste("Download by table is not available for lab metadata tables. To get the complete dataset for table ", 
-                   tabl, ", download the most recently published site and month of data for ", 
-                   paste(table_types$productID[which(table_types$tableName==tabl)], collapse=" or "), 
+        stop(paste("Download by table is not available for lab metadata tables. To get the complete dataset for table ",
+                   tabl, ", download the most recently published site and month of data for ",
+                   paste(table_types$productID[which(table_types$tableName==tabl)], collapse=" or "),
                    ".", sep=""))
       }
     }
@@ -116,7 +116,7 @@ zipsByProduct <- function(dpID, site="all", startdate=NA, enddate=NA, package="b
   if(dpID %in% c("DP1.00033.001", "DP1.00042.001")) {
     stop(paste(dpID, "is a phenological image product, data are hosted by Phenocam.", sep=" "))
   }
-  
+
   # error for DHP expanded package
   if(dpID=="DP1.10017.001" & package=="expanded") {
     stop("Digital hemispherical images expanded file packages exceed R download limits. Either download from the data portal, or download the basic package and use the URLs in the data to download the images themselves. Follow instructions in the Data Product User Guide for image file naming.")
@@ -130,18 +130,18 @@ zipsByProduct <- function(dpID, site="all", startdate=NA, enddate=NA, package="b
                  'DP4.00067.001','DP4.00137.001','DP4.00201.001','DP1.00030.001')) {
     stop(paste(dpID, 'is only available in the bundled eddy covariance data product. Download DP4.00200.001 to access these data.', sep=' '))
   }
-  
+
   # redirect for met/precip data shared between terrestrial & aquatic sites
   # site=='all' not addressed, because in that case all available sites for the product are returned
   if(length(intersect(which(shared_aquatic$product==dpID), which(shared_aquatic$site %in% site)))>0) {
-    cat(paste("Some sites in your download request are aquatic sites where ", 
-              dpID, " is collected at a nearby terrestrial site. The sites you requested, and the sites that will be accessed instead, are listed below:\n", 
+    cat(paste("Some sites in your download request are aquatic sites where ",
+              dpID, " is collected at a nearby terrestrial site. The sites you requested, and the sites that will be accessed instead, are listed below:\n",
               sep=""))
     site <- unlist(lapply(site, function(x) {
       if(x %in% shared_aquatic$site) {
         if(dpID %in% shared_aquatic$product[which(shared_aquatic$site==x)]) {
           terrSite <- unique(shared_aquatic$towerSite[which(shared_aquatic$site==x)])
-          
+
           cat(paste(x, " -> ", terrSite, "\n", sep=""))
           return(terrSite)
         }
@@ -154,7 +154,7 @@ zipsByProduct <- function(dpID, site="all", startdate=NA, enddate=NA, package="b
       }
     }))
   }
-  
+
   # redirect for chemistry data product bundles
   if(dpID %in% chem_bundles$product) {
     if(chem_bundles$homeProduct[which(chem_bundles$product==dpID)]==
@@ -162,8 +162,8 @@ zipsByProduct <- function(dpID, site="all", startdate=NA, enddate=NA, package="b
       stop("Root chemistry and isotopes have been bundled with the root biomass data. For root chemistry from Megapits, download DP1.10066.001. For root chemistry from periodic sampling, download DP1.10067.001.")
     } else {
       newDPID <- chem_bundles$homeProduct[which(chem_bundles$product==dpID)]
-      stop(paste(dpID, " has been bundled with ", newDPID, 
-                " and is not available independently. Please download ", 
+      stop(paste(dpID, " has been bundled with ", newDPID,
+                " and is not available independently. Please download ",
                 newDPID, sep=""))
     }
   }
@@ -171,46 +171,46 @@ zipsByProduct <- function(dpID, site="all", startdate=NA, enddate=NA, package="b
   # redirect for veg structure and sediment data product bundles
   if(dpID %in% other_bundles$product & release!="RELEASE-2021") {
     newDPID <- other_bundles$homeProduct[which(other_bundles$product==dpID)]
-    stop(paste("Except in RELEASE-2021, ", dpID, " has been bundled with ", newDPID, 
-               " and is not available independently. Please download ", 
+    stop(paste("Except in RELEASE-2021, ", dpID, " has been bundled with ", newDPID,
+               " and is not available independently. Please download ",
                newDPID, sep=""))
   }
-  
+
   # if token is an empty string, set to NA
   if(identical(token, "")) {
     token <- NA_character_
   }
-  
+
   # query the products endpoint for the product requested
   if(release=="current") {
-    prod.req <- getAPI(apiURL = paste("http://data.neonscience.org/api/v0/products/", 
+    prod.req <- getAPI(apiURL = paste("http://data.neonscience.org/api/v0/products/",
                                       dpID, sep=""), token = token)
   } else {
-    prod.req <- getAPI(apiURL = paste("http://data.neonscience.org/api/v0/products/", 
+    prod.req <- getAPI(apiURL = paste("http://data.neonscience.org/api/v0/products/",
                                       dpID, "?release=", release, sep=""), token = token)
   }
 
   if(is.null(prod.req)) {
     return(invisible())
   }
-  avail <- jsonlite::fromJSON(httr::content(prod.req, as='text', encoding='UTF-8'), 
+  avail <- jsonlite::fromJSON(httr::content(prod.req, as='text', encoding='UTF-8'),
                               simplifyDataFrame=TRUE, flatten=TRUE)
-  
+
   # error message if product not found
   if(!is.null(avail$error$status)) {
     if(release=="LATEST") {
-      stop(paste("No data found for product ", dpID, 
+      stop(paste("No data found for product ", dpID,
                  ". LATEST data requested; check that token is valid for LATEST access.", sep=""))
     } else {
       if(any(grepl("Release not found", avail$error$detail))) {
-        stop(paste("Release not found. Valid releases for product ", dpID, 
+        stop(paste("Release not found. Valid releases for product ", dpID,
                    " are ", paste0(avail$data$validReleases, collapse=" "), sep=""))
       } else {
         stop(paste("No data found for product", dpID, sep=" "))
       }
     }
   }
-  
+
   # check that token was used
   if(!is.na(token) & !is.null(prod.req$headers$`x-ratelimit-limit`)) {
     if(prod.req$headers$`x-ratelimit-limit`==200) {
@@ -244,7 +244,7 @@ zipsByProduct <- function(dpID, site="all", startdate=NA, enddate=NA, package="b
 
   # get the urls for months with data available
   month.urls <- unlist(avail$data$siteCodes$availableDataUrls)
-  
+
   # error message if nothing is available
   if(length(month.urls)==0) {
     stop("There are no data matching the search criteria.")
@@ -299,7 +299,7 @@ zipsByProduct <- function(dpID, site="all", startdate=NA, enddate=NA, package="b
       stop("Download halted.")
     }
   } else {
-    cat(paste0("Downloading files totaling approximately ", downld.size, "\n"))
+    # cat(paste0("Downloading files totaling approximately ", downld.size, "\n"))
   }
 
   # create folder in working directory or savepath to put files in
@@ -314,12 +314,12 @@ zipsByProduct <- function(dpID, site="all", startdate=NA, enddate=NA, package="b
       stop("filesToStack directory could not be created. Check that savepath is a valid directory.")
     }
   } else {
-    message(paste(filepath, " already exists. Download will proceed, but check for duplicate files.", sep=""))
+    # message(paste(filepath, " already exists. Download will proceed, but check for duplicate files.", sep=""))
   }
-  
-  writeLines(paste("Downloading ", nrow(zip.urls), " files", sep=""))
-  pb <- utils::txtProgressBar(style=3)
-  utils::setTxtProgressBar(pb, 1/(nrow(zip.urls)-1))
+
+  # writeLines(paste("Downloading ", nrow(zip.urls), " files", sep=""))
+  # pb <- utils::txtProgressBar(style=3)
+  # utils::setTxtProgressBar(pb, 1/(nrow(zip.urls)-1))
 
   j <- 1
   counter<- 1
@@ -351,11 +351,11 @@ zipsByProduct <- function(dpID, site="all", startdate=NA, enddate=NA, package="b
         }
 
         if(inherits(t, "error")) {
-          
+
           # re-attempt download once with no changes
           if(counter < 2) {
             writeLines(paste0("\n", zip.urls$name[j], " could not be downloaded. Re-attempting."))
-            
+
             if(is.na(token)) {
               t <- tryCatch(
                 {
@@ -370,7 +370,7 @@ zipsByProduct <- function(dpID, site="all", startdate=NA, enddate=NA, package="b
                                                         headers=c("X-API-Token"=token)))
                 }, error = function(e) { e } )
             }
-            
+
             if(inherits(t, "error")) {
               counter <- counter + 1
             } else {
@@ -379,31 +379,31 @@ zipsByProduct <- function(dpID, site="all", startdate=NA, enddate=NA, package="b
             }
           } else {
             writeLines(paste0("\n", zip.urls$name[j], " could not be downloaded. URLs may have expired. Refreshing URL list."))
-            
-            zip.urls <- quietMessages(getZipUrls(month.urls, avg=avg, package=package, tabl=tabl, 
+
+            zip.urls <- quietMessages(getZipUrls(month.urls, avg=avg, package=package, tabl=tabl,
                                                  dpID=dpID, release=release, messages=messages, token=token))
             zip.urls <- tidyr::drop_na(zip.urls)
-            
+
             counter <- counter + 1
           }
         } else {
           j <- j + 1
           counter <- 1
-          utils::setTxtProgressBar(pb, j/(nrow(zip.urls)-1))
+          # utils::setTxtProgressBar(pb, j/(nrow(zip.urls)-1))
         }
       }
 
     }
   }
 
-  utils::setTxtProgressBar(pb, 1)
-  close(pb)
+  # utils::setTxtProgressBar(pb, 1)
+  # close(pb)
 
   if(load==F) {
     messages <- c(messages, paste0(nrow(zip.urls), " files successfully downloaded to ", filepath))
   }
 
-  writeLines(paste0(messages[-1], collapse = "\n"))
+  # writeLines(paste0(messages[-1], collapse = "\n"))
 }
 
 

@@ -29,16 +29,16 @@
 
 getZipUrls <- function(month.urls, avg, package, dpID, release, messages, tabl, token = NA_character_) {
 
-  writeLines("Finding available files")
-  pb <- utils::txtProgressBar(style=3)
-  utils::setTxtProgressBar(pb, 1/length(month.urls))
-  
+  # writeLines("Finding available files")
+  # pb <- utils::txtProgressBar(style=3)
+  # utils::setTxtProgressBar(pb, 1/length(month.urls))
+
   # get all the file names
   tmp.files <- list(length(month.urls))
   for(j in 1:length(month.urls)) {
 
     tmp.files[[j]] <- getAPI(month.urls[j], token=token)
-    
+
     if(tmp.files[[j]]$status_code==500) {
       messages <- c(messages, paste("Query for url ", month.urls[j],
                                     " failed. API may be unavailable; check data portal data.neonscience.org for outage alert.",
@@ -47,21 +47,21 @@ getZipUrls <- function(month.urls, avg, package, dpID, release, messages, tabl, 
     }
     tmp.files[[j]] <- jsonlite::fromJSON(httr::content(tmp.files[[j]], as="text", encoding='UTF-8'),
                                          simplifyDataFrame=T, flatten=T)
-    utils::setTxtProgressBar(pb, j/length(month.urls))
+    # utils::setTxtProgressBar(pb, j/length(month.urls))
   }
-  
-  utils::setTxtProgressBar(pb, 1)
-  close(pb)
-  
+
+  # utils::setTxtProgressBar(pb, 1)
+  # close(pb)
+
   # if a release is selected, subset to the release
   if(release!="current") {
     tmp.ind <- lapply(tmp.files, function(x) {
       x$data$release==release
     })
     tmp.files <- tmp.files[which(unlist(tmp.ind))]
-    
+
     if(length(tmp.files)==0) {
-      stop(paste("No files found for release ", release, 
+      stop(paste("No files found for release ", release,
                  " and query parameters. Check release name and dates.", sep=""))
     }
   }
@@ -122,7 +122,7 @@ getZipUrls <- function(month.urls, avg, package, dpID, release, messages, tabl, 
                                             tmp.files[[i]]$data$files$url[which.var],
                                             tmp.files[[i]]$data$files$size[which.var]))
         }
-        
+
         which.read <- grep("readme", tmp.files[[i]]$data$files$name, fixed=T)[1]
         if(is.na(which.read)) {
           zip.urls <- zip.urls
@@ -131,12 +131,12 @@ getZipUrls <- function(month.urls, avg, package, dpID, release, messages, tabl, 
                                             tmp.files[[i]]$data$files$url[which.read],
                                             tmp.files[[i]]$data$files$size[which.read]))
         }
-        
+
       }
-      
+
       # add url for most recent sensor position file for each site
       if(i %in% max.pub.site) {
-        
+
         which.sens <- grep("sensor_position", tmp.files[[i]]$data$files$name, fixed=T)[1]
         if(is.na(which.sens)) {
           zip.urls <- zip.urls
@@ -145,24 +145,24 @@ getZipUrls <- function(month.urls, avg, package, dpID, release, messages, tabl, 
                                             tmp.files[[i]]$data$files$url[which.sens],
                                             tmp.files[[i]]$data$files$size[which.sens]))
         }
-        
+
       }
-      
+
       # drop duplicate files by hash
       unique.files <- tmp.files[[i]]$data$files[!base::duplicated(tmp.files[[i]]$data$files$md5),]
-      
+
       # select files by averaging interval
       if(avg!="all") {
         all.file <- union(grep(paste(avg, "min", sep=""), unique.files$name, fixed=T),
                           grep(paste(avg, "_min", sep=""), unique.files$name, fixed=T))
-        
+
         if(length(all.file)==0) {
           messages <- c(messages, paste("No files found for site", tmp.files[[i]]$data$siteCode,
                                         "and month", tmp.files[[i]]$data$month, sep=" "))
           next
         }
       }
-      
+
       if(tabl!="all") {
         all.file <- grep(paste("[.]", tabl, "[.]", sep=""), unique.files$name)
       }
@@ -213,14 +213,14 @@ getZipUrls <- function(month.urls, avg, package, dpID, release, messages, tabl, 
 
       # check for packages section in response
       if("packages" %in% names(tmp.files[[i]]$data)) {
-        
+
         # check for no files
         if(length(tmp.files[[i]]$data$packages)==0) {
           messages <- c(messages, paste("No files found for site", tmp.files[[i]]$data$siteCode,
                                         "and month", tmp.files[[i]]$data$month, sep=" "))
           next
         }
-        
+
         # if package==expanded, check that expanded package exists
         # if it doesn't, download basic package
         pk <- package
@@ -238,32 +238,32 @@ getZipUrls <- function(month.urls, avg, package, dpID, release, messages, tabl, 
         # get the file name, and estimate the size
         z <- tmp.files[[i]]$data$packages$url[which(tmp.files[[i]]$data$packages$type==pk)]
         h <- getAPIHeaders(apiURL=z, token=token)
-        
+
         # if no response, move to next silently - message will be printed by getAPIHeaders()
         if(is.null(h)) {
           next
         }
-        
+
         flhd <- httr::headers(h)
         flnm <- gsub('\"', '', flhd$`content-disposition`, fixed=T)
         flnm <- gsub("inline; filename=", "", flnm, fixed=T)
-        sz <- sum(tmp.files[[i]]$data$files$size[grep(pk, tmp.files[[i]]$data$files$name)], 
+        sz <- sum(tmp.files[[i]]$data$files$size[grep(pk, tmp.files[[i]]$data$files$name)],
                   na.rm=T)
-        
+
         zip.urls <- rbind(zip.urls, cbind(flnm, z, sz))
-        
+
       } else {
-      
+
       # if no packages, look for pre-packaged zip files
       all.zip <- grep(".zip", tmp.files[[i]]$data$files$name, fixed=T)
 
       # check for no zips
       if(length(all.zip)==0) {
-        
+
         messages <- c(messages, paste("No zip files found for site", tmp.files[[i]]$data$siteCode,
                                       "and month", tmp.files[[i]]$data$month, sep=" "))
         next
-        
+
       }
 
       # if package==expanded, check that expanded package exists
@@ -315,10 +315,10 @@ getZipUrls <- function(month.urls, avg, package, dpID, release, messages, tabl, 
   zip.urls$URL <- as.character(zip.urls$URL)
   zip.urls$name <- as.character(zip.urls$name)
   zip.urls$size <- as.character(zip.urls$size)
-  
+
   # check for bad table name
   if(tabl!="all" & length(grep(paste("[.]", tabl, "[.]", sep=""), zip.urls$name))==0) {
-    message(paste("No files found for ", tabl, ". Check that this is a valid table name in ", 
+    message(paste("No files found for ", tabl, ". Check that this is a valid table name in ",
                dpID, ".", sep=""))
     return(invisible())
   }
